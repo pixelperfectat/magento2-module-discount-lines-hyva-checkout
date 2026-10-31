@@ -9,3 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Hyvä Checkout price summary renderer for itemised discount lines, variants A to D, coupon removal through the
   Hyvä Checkout coupon component.
+
+### Changed
+
+- Replaces the template of the `discount` price summary segment; the original markup is rendered without lines.
