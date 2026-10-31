@@ -10,7 +10,8 @@ use Hyva\Theme\ViewModel\HyvaCsp;
     /*
      * Coupon removal for the discount lines: delegates to Hyvä Checkout's own Magewire coupon component
      * (block "coupon-code", action revokeCouponCode), which refreshes the price summary afterwards.
-     * The button stays hidden when that component is not on the page (discount code field disabled).
+     * The button stays hidden while that component is not on the page (discount code field disabled);
+     * availability is re-checked on Magewire load/morph events, so initialisation order does not matter.
      */
     function ppDiscountLinesRemoveCoupon() {
         const couponComponent = () => {
@@ -20,14 +21,38 @@ use Hyva\Theme\ViewModel\HyvaCsp;
         };
 
         return {
-            canRemove: false,
-            init() {
-                this.canRemove = couponComponent() !== null;
+            available: false,
+            busy: false,
+            get canRemove() {
+                return this.available;
             },
-            remove() {
+            check() {
+                this.available = couponComponent() !== null;
+            },
+            init() {
+                this.check();
+                ['magewire:load', 'magewire:update', 'magewire:loaded'].forEach((name) => {
+                    window.addEventListener(name, () => this.check());
+                });
+                // Late registration fallback.
+                let tries = 0;
+                const timer = setInterval(() => {
+                    this.check();
+                    if (this.available || ++tries > 20) {
+                        clearInterval(timer);
+                    }
+                }, 250);
+            },
+            async remove() {
                 const component = couponComponent();
-                if (component) {
-                    component.call('revokeCouponCode');
+                if (!component || this.busy) {
+                    return;
+                }
+                this.busy = true;
+                try {
+                    await component.call('revokeCouponCode');
+                } finally {
+                    this.busy = false;
                 }
             }
         };
