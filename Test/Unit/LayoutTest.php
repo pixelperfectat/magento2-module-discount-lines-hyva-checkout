@@ -23,6 +23,18 @@ class LayoutTest extends TestCase
         self::assertFileExists(self::MODULE_DIR . '/view/frontend/templates/price-summary/total-segments/discount.phtml');
     }
 
+    public function testGiftCardSegmentGetsARendererBlock(): void
+    {
+        $xml = simplexml_load_file(self::MODULE_DIR . '/view/frontend/layout/hyva_checkout_components.xml');
+        $blocks = $xml->xpath(
+            '//referenceBlock[@name="price-summary.total-segments"]/block[@name="price-summary.total-segment.gift_card"]'
+        );
+
+        self::assertCount(1, $blocks);
+        self::assertSame('gift_card', (string)$blocks[0]['as']);
+        self::assertFileExists(self::MODULE_DIR . '/view/frontend/templates/price-summary/total-segments/gift-card.phtml');
+    }
+
     public function testModuleLoadsAfterBaseModuleAndHyvaCheckout(): void
     {
         $xml = simplexml_load_file(self::MODULE_DIR . '/etc/module.xml');

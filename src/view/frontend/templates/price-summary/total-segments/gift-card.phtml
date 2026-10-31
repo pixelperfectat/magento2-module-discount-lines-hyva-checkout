@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Checkout\ViewModel\Checkout\Formatter as FormatterViewModel;
+use Hyva\Theme\Model\ViewModelRegistry;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PixelPerfect\DiscountLines\ViewModel\DiscountLines;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var FormatterViewModel $formatter */
+$formatter = $viewModels->require(FormatterViewModel::class);
+/** @var DiscountLines $discountLines */
+$discountLines = $viewModels->require(DiscountLines::class);
+
+$segment = $block->getSegment();
+$lines = $discountLines->isEnabled() ? $discountLines->getLinesFromSegment($segment) : [];
+
+if ($lines === []) {
+    /* No itemised lines (an adapter that fills them is not installed, or the module is off): plain row. */
+    $segmentTitle = $segment['title'] ?? '';
+    $displayTitle = !empty($segmentTitle) ? $segmentTitle : (string) __('Gift Cards');
+    ?>
+<div class="flex gap-4 justify-between">
+    <span class="label min-w-0 break-words wrap-break-word">
+        <?= $escaper->escapeHtml($displayTitle) ?>
+    </span>
+    <span class="value">
+        <?= /* @noEscape */ $formatter->currency($segment['value'] ?? 0) ?>
+    </span>
+</div>
+    <?php
+    return;
+}
+?>
+<div class="pp-dl pp-dl--<?= $escaper->escapeHtmlAttr(strtolower($discountLines->getVariant())) ?>">
+    <?php foreach ($lines as $line): ?>
+        <div class="pp-dl__line">
+            <span class="pp-dl__label">
+                <span class="pp-dl__chip pp-dl__chip--<?= $escaper->escapeHtmlAttr($line['kind']) ?>">
+                    <img class="pp-dl__icon" src="<?= $escaper->escapeUrl($discountLines->getIconUrl($line['kind'])) ?>"
+                         alt="" width="14" height="14" aria-hidden="true">
+                    <span><?= $escaper->escapeHtml($line['label']) ?></span>
+                </span>
+            </span>
+            <span class="pp-dl__amount"><?= $escaper->escapeHtml($formatter->currency(-$line['amount'])) ?></span>
+        </div>
+    <?php endforeach ?>
+</div>
