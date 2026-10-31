@@ -14,7 +14,7 @@ use Hyva\Theme\ViewModel\HyvaCsp;
      */
     function ppDiscountLinesRemoveCoupon() {
         const couponComponent = () => {
-            const components = window.Magewire?.components?.componentsByName?.('coupon-code') ?? [];
+            const components = window.Magewire?.components?.getComponentsByName?.('coupon-code') ?? [];
 
             return components.length ? components[0] : null;
         };

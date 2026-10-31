@@ -83,7 +83,7 @@ $renderAmount = static function (array $line) use ($formatter, $escaper): string
                         <span><?= $escaper->escapeHtml(__('Coupon')) ?></span>
                         <?= /* @noEscape */ $chip ?>
                     <?php else: ?>
-                        <span class="pp-dl__label"><?= /* @noEscape */ $icon ?><?= $escaper->escapeHtml($line['label']) ?></span>
+                        <span style="display: inline-flex; align-items: center; gap: 0.4rem"><?= /* @noEscape */ $icon ?><?= $escaper->escapeHtml($line['label']) ?></span>
                     <?php endif ?>
                 </div>
                 <span class="pp-dl__amount"><?= /* @noEscape */ $renderAmount($line) ?></span>

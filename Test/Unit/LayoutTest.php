@@ -34,7 +34,7 @@ class LayoutTest extends TestCase
 
     public function testStylesheetAndScriptBlockAreRegisteredOnTheCheckoutPage(): void
     {
-        $xml = simplexml_load_file(self::MODULE_DIR . '/view/frontend/layout/checkout_index_index.xml');
+        $xml = simplexml_load_file(self::MODULE_DIR . '/view/frontend/layout/hyva_checkout_index_index.xml');
 
         self::assertCount(1, $xml->xpath('//css[@src="PixelPerfect_DiscountLines::css/discount-lines.css"]'));
         self::assertFileExists(self::MODULE_DIR . '/view/frontend/templates/js/remove-coupon.phtml');
