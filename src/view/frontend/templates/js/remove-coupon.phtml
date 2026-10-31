@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\ViewModel\HyvaCsp;
+
+/** @var HyvaCsp $hyvaCsp */
+?>
+<script>
+    /*
+     * Coupon removal for the discount lines: delegates to Hyvä Checkout's own Magewire coupon component
+     * (block "coupon-code", action revokeCouponCode), which refreshes the price summary afterwards.
+     * The button stays hidden when that component is not on the page (discount code field disabled).
+     */
+    function ppDiscountLinesRemoveCoupon() {
+        const couponComponent = () => {
+            const components = window.Magewire?.components?.componentsByName?.('coupon-code') ?? [];
+
+            return components.length ? components[0] : null;
+        };
+
+        return {
+            canRemove: false,
+            init() {
+                this.canRemove = couponComponent() !== null;
+            },
+            remove() {
+                const component = couponComponent();
+                if (component) {
+                    component.call('revokeCouponCode');
+                }
+            }
+        };
+    }
+
+    window.addEventListener('alpine:init', () => {
+        Alpine.data('ppDiscountLinesRemoveCoupon', ppDiscountLinesRemoveCoupon)
+    }, { once: true })
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
