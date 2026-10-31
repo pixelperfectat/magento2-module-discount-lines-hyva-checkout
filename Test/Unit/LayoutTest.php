@@ -42,8 +42,8 @@ class LayoutTest extends TestCase
 
     public function testGermanTranslationCoversEveryString(): void
     {
-        $english = array_column(array_map('str_getcsv', file(self::MODULE_DIR . '/i18n/en_US.csv')), 0);
-        $german = array_column(array_map('str_getcsv', file(self::MODULE_DIR . '/i18n/de_DE.csv')), 0);
+        $english = array_column(array_map(static fn (string $l): array => str_getcsv($l, ',', '"', ''), file(self::MODULE_DIR . '/i18n/en_US.csv')), 0);
+        $german = array_column(array_map(static fn (string $l): array => str_getcsv($l, ',', '"', ''), file(self::MODULE_DIR . '/i18n/de_DE.csv')), 0);
 
         self::assertSame($english, $german);
     }
