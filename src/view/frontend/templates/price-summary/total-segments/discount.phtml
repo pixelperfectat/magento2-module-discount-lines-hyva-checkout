@@ -53,6 +53,8 @@ $renderAmount = static function (array $line) use ($formatter, $escaper): string
 ?>
 <div class="pp-dl pp-dl--<?= $escaper->escapeHtmlAttr($variant) ?>"
      x-data="ppDiscountLinesRemoveCoupon"
+     x-on:magewire:load.window="check"
+     x-on:magewire:update.window="check"
      data-pp-dl-variant="<?= $escaper->escapeHtmlAttr(strtoupper($variant)) ?>">
     <?php foreach ($lines as $line): ?>
         <?php
