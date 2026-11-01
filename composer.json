@@ -61,5 +61,10 @@
     ],
     "suggest": {
         "hyva-themes/magento2-hyva-checkout": "Hyvä Checkout (commercial) provides the price summary this module renders into"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
+        }
     }
 }
