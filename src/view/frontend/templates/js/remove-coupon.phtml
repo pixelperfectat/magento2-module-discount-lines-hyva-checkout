@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\ViewModel\HyvaCsp;
+
+/** @var HyvaCsp $hyvaCsp */
+?>
+<script>
+    /*
+     * Coupon removal for the discount lines: delegates to Hyvä Checkout's own Magewire coupon component
+     * (block "coupon-code", action revokeCouponCode), which refreshes the price summary afterwards.
+     * The button stays hidden while that component is not on the page (discount code field disabled);
+     * availability is re-checked on the Magewire window events magewire:load and magewire:update (declared with
+     * x-on:...window in the template, so Alpine removes the listeners with the element) and once in init().
+     * Magewire's Component.call() returns a Promise (livewire.js), which keeps `busy` accurate.
+     */
+    function ppDiscountLinesRemoveCoupon() {
+        const couponComponent = () => {
+            const components = window.Magewire?.components?.getComponentsByName?.('coupon-code') ?? [];
+
+            return components.length ? components[0] : null;
+        };
+
+        return {
+            available: false,
+            busy: false,
+            get canRemove() {
+                return this.available;
+            },
+            check() {
+                this.available = couponComponent() !== null;
+            },
+            init() {
+                this.check();
+            },
+            async remove() {
+                const component = couponComponent();
+                if (!component || this.busy) {
+                    return;
+                }
+                this.busy = true;
+                try {
+                    await component.call('revokeCouponCode');
+                } finally {
+                    this.busy = false;
+                }
+            }
+        };
+    }
+
+    window.addEventListener('alpine:init', () => {
+        Alpine.data('ppDiscountLinesRemoveCoupon', ppDiscountLinesRemoveCoupon)
+    }, { once: true })
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

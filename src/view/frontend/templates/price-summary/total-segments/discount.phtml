@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Checkout\ViewModel\Checkout\Formatter as FormatterViewModel;
+use Hyva\Theme\Model\ViewModelRegistry;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use PixelPerfect\DiscountLines\ViewModel\DiscountLines;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+
+/** @var FormatterViewModel $formatter */
+$formatter = $viewModels->require(FormatterViewModel::class);
+/** @var DiscountLines $discountLines */
+$discountLines = $viewModels->require(DiscountLines::class);
+
+$segment = $block->getSegment();
+$lines = $discountLines->isEnabled() ? $discountLines->getLinesFromSegment($segment) : [];
+
+if ($lines === []) {
+    /* No itemised lines (module disabled, or older quote): same markup as the Hyvä Checkout core template. */
+    $segmentTitle = $segment['title'] ?? '';
+    $displayTitle = !empty($segmentTitle) ? $segmentTitle : (string) __('Discount');
+    ?>
+<div class="flex gap-4 justify-between">
+    <span class="label min-w-0 break-words wrap-break-word">
+        <?= $escaper->escapeHtml($displayTitle) ?>
+    </span>
+    <span class="value">
+        <?= /* @noEscape */ $formatter->currency($segment['value'] ?? 0) ?>
+    </span>
+</div>
+    <?php
+    return;
+}
+
+$variant = strtolower($discountLines->getVariant());
+$saved = $discountLines->getSavedTotal($lines);
+$hasCoupon = $discountLines->hasCoupon($lines);
+
+$renderAmount = static function (array $line) use ($formatter, $escaper): string {
+    if ($line['amount'] > 0.0) {
+        return $escaper->escapeHtml($formatter->currency(-$line['amount']));
+    }
+
+    return $escaper->escapeHtml(
+        $line['kind'] === 'free_shipping' ? (string) __('Free') : (string) __('Gift')
+    );
+};
+?>
+<div class="pp-dl pp-dl--<?= $escaper->escapeHtmlAttr($variant) ?>"
+     x-data="ppDiscountLinesRemoveCoupon"
+     x-on:magewire:load.window="check"
+     x-on:magewire:update.window="check"
+     data-pp-dl-variant="<?= $escaper->escapeHtmlAttr(strtoupper($variant)) ?>">
+    <?php foreach ($lines as $line): ?>
+        <?php
+        $kind = $line['kind'];
+        $icon = '<img class="pp-dl__icon" src="' . $escaper->escapeUrl($discountLines->getIconUrl($kind))
+            . '" alt="" width="14" height="14" aria-hidden="true">';
+        $removeLabel = (string) __('Remove coupon %1', $line['label']);
+        $remove = '';
+        if ($line['removable'] && $variant !== 'c') {
+            $remove = '<button type="button" class="pp-dl__remove" x-show="canRemove" x-on:click="remove"'
+                . ' x-bind:disabled="busy" aria-label="' . $escaper->escapeHtmlAttr($removeLabel) . '">'
+                . '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+                . ' stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>'
+                . '</button>';
+        }
+        $chip = '<span class="pp-dl__chip pp-dl__chip--' . $escaper->escapeHtmlAttr($kind) . '">'
+            . $icon . '<span' . ($line['removable'] ? ' class="pp-dl__code"' : '') . '>' . $escaper->escapeHtml($line['label']) . '</span>' . $remove . '</span>';
+        $isCoupon = $line['removable'];
+        ?>
+        <?php if ($variant === 'a'): ?>
+            <div class="pp-dl__line">
+                <div class="pp-dl__label">
+                    <?php if ($isCoupon): ?>
+                        <span><?= $escaper->escapeHtml(__('Coupon')) ?></span>
+                        <?= /* @noEscape */ $chip ?>
+                    <?php else: ?>
+                        <span class="pp-dl__label-plain"><?= /* @noEscape */ $icon ?><?= $escaper->escapeHtml($line['label']) ?></span>
+                    <?php endif ?>
+                </div>
+                <span class="pp-dl__amount"><?= /* @noEscape */ $renderAmount($line) ?></span>
+            </div>
+        <?php elseif ($variant === 'd'): ?>
+            <div class="pp-dl__line">
+                <span class="pp-dl__label">
+                    <?php if ($isCoupon): ?>
+                        <span><?= $escaper->escapeHtml(__('Coupon')) ?></span>
+                    <?php endif ?>
+                    <?= /* @noEscape */ $chip ?>
+                </span>
+                <span class="pp-dl__amount"><?= /* @noEscape */ $renderAmount($line) ?></span>
+            </div>
+        <?php else: ?>
+            <div class="pp-dl__line">
+                <span class="pp-dl__label"><?= /* @noEscape */ $chip ?></span>
+                <span class="pp-dl__amount"><?= /* @noEscape */ $renderAmount($line) ?></span>
+            </div>
+        <?php endif ?>
+    <?php endforeach ?>
+    <?php if ($variant === 'c'): ?>
+        <?php if (count($lines) > 1 && $saved > 0.0): ?>
+            <div class="pp-dl__summary">
+                <span><?= $escaper->escapeHtml(__('You save')) ?></span>
+                <span class="pp-dl__amount"><?= $escaper->escapeHtml($formatter->currency($saved)) ?></span>
+            </div>
+        <?php endif ?>
+        <?php if ($hasCoupon): ?>
+            <?php $couponLine = current(array_filter($lines, static fn (array $l): bool => $l['removable'])); ?>
+            <button type="button" class="pp-dl__remove pp-dl__remove--link" x-show="canRemove" x-on:click="remove"
+                    x-bind:disabled="busy"
+                    aria-label="<?= $escaper->escapeHtmlAttr(__('Remove coupon %1', $couponLine['label'])) ?>">
+                <?= $escaper->escapeHtml(__('Remove coupon')) ?>
+            </button>
+        <?php endif ?>
+    <?php endif ?>
+</div>

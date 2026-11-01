@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="price-summary.total-segment.discount"
+                        template="PixelPerfect_DiscountLinesHyvaCheckout::price-summary/total-segments/discount.phtml"/>
+        <!--
+            Hyvä Checkout renders only segments that have a renderer block. A gift card adapter (Mageplaza) fills the
+            lines of the gift_card segment; without lines the template shows a plain title/value row.
+        -->
+        <referenceBlock name="price-summary.total-segments">
+            <block name="price-summary.total-segment.gift_card"
+                   as="gift_card"
+                   template="PixelPerfect_DiscountLinesHyvaCheckout::price-summary/total-segments/gift-card.phtml"/>
+        </referenceBlock>
+    </body>
+</page>
